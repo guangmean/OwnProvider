@@ -1,0 +1,11 @@
+[header]
+alg = "ES256"
+kid = "Yourkid"
+
+[playload]
+iss = "YourTeamId"
+iat = 1537441817
+
+[apple]
+teamid = "YourTeamId"
+privatekey = "/Where/your/apple/.p8"
