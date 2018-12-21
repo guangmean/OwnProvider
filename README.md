@@ -15,7 +15,7 @@ go build -o ownprovider
 
 # Push a Message
 ```shell
-curl -X POST "http://127.0.0.1:9527/api/notify" -d 'topic=YourBundleId&token=YourDeviceToken&playload={"aps":{"alert":"Hello"}}'
+curl -X POST "http://127.0.0.1:9527/api/notify" -d 'topic=YourBundleId&token=YourDeviceToken&payload={"aps":{"alert":"Hello"}}'
 ```
 
 # Building...
