@@ -28,6 +28,8 @@ func main() {
 		return
 	}
 
+	fmt.Println("Own Provider Server Start...")
+
 	// API Service
 	http.HandleFunc("/api/notify", push)
 	http.ListenAndServe(":9527", nil)
@@ -43,7 +45,7 @@ func push(w http.ResponseWriter, r *http.Request) {
 
 	topic := r.FormValue("topic")
 	deviceToken := r.FormValue("token")
-	playload := r.FormValue("playload")
+	payload := r.FormValue("payload")
 
 	if "" == topic {
 		appleResult.Code = 406
@@ -61,9 +63,9 @@ func push(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if "" == playload {
+	if "" == payload {
 		appleResult.Code = 406
-		appleResult.Body = "Please specify a playload"
+		appleResult.Body = "Please specify a payload"
 		jsonBytes, _ := json.Marshal(appleResult)
 		w.Write([]byte(jsonBytes))
 		return
@@ -84,7 +86,7 @@ func push(w http.ResponseWriter, r *http.Request) {
 
 	var push = api.ApplePush{
 		httpHeader,
-		[]byte(playload),
+		[]byte(payload),
 		deviceToken,
 	}
 

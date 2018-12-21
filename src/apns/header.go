@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	ServerDev  = "https://api.sandbox.push.apple.com"
+	ServerDev  = "https://api.development.push.apple.com"
 	ServerGold = "https://api.push.apple.com"
 )
 

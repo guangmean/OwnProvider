@@ -9,13 +9,13 @@ import (
 )
 
 type ApplePush struct {
-	HttpHeader   http.Header
-	HttpPlayload []byte
-	DeviceToken  string
+	HttpHeader  http.Header
+	HttpPayload []byte
+	DeviceToken string
 }
 
 func (ap ApplePush) Notify() (int, []byte, error) {
-	req, err := http.NewRequest("POST", apns.ServerDev+"/3/device/"+ap.DeviceToken, bytes.NewReader(ap.HttpPlayload))
+	req, err := http.NewRequest("POST", apns.ServerDev+"/3/device/"+ap.DeviceToken, bytes.NewReader(ap.HttpPayload))
 	if nil != err {
 		return 406, []byte("Init Request Failure"), err
 	}

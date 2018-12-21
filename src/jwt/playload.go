@@ -3,6 +3,7 @@ package jwt
 import (
 	"encoding/base64"
 	"encoding/json"
+	"strings"
 )
 
 type JwtPlayload struct {
@@ -12,11 +13,11 @@ type JwtPlayload struct {
 
 func (p JwtPlayload) Base64Content() (string, error) {
 
-	playloadByte, err := json.Marshal(p)
+	payloadByte, err := json.Marshal(p)
 
 	if nil != err {
 		return "", err
 	}
 
-	return base64.StdEncoding.EncodeToString(playloadByte), nil
+	return strings.TrimRight(base64.URLEncoding.EncodeToString(payloadByte), "="), nil
 }

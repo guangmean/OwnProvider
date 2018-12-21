@@ -3,6 +3,7 @@ package jwt
 import (
 	"encoding/base64"
 	"encoding/json"
+	"strings"
 )
 
 type JwtHeader struct {
@@ -18,5 +19,5 @@ func (h JwtHeader) Base64Content() (string, error) {
 		return "", err
 	}
 
-	return base64.StdEncoding.EncodeToString(headerByte), nil
+	return strings.TrimRight(base64.URLEncoding.EncodeToString(headerByte), "="), nil
 }
