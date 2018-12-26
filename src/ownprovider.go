@@ -6,12 +6,14 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"jwt"
 	"net/http"
+	"time"
 )
 
 var (
-	port     = flag.String("port", "8888", "The service port.")
+	port     = flag.String("port", "9696", "The service port.")
 	tomlConf = flag.String("config", "/tmp/ownprovider.toml", "TOML format config file.")
 	logFile  = flag.String("log", "/tmp/log_ownprovider.log", "The log file.")
 )
@@ -32,16 +34,17 @@ func main() {
 
 	// API Service
 	http.HandleFunc("/api/notify", push)
-	http.ListenAndServe(":9527", nil)
+	http.ListenAndServe(":9696", nil)
 }
 
 func push(w http.ResponseWriter, r *http.Request) {
 
 	type AppleResult struct {
-		Code int
-		Body string
+		Code   int
+		Header string
+		Body   string
 	}
-	var appleResult = AppleResult{200, "Success"}
+	var appleResult = AppleResult{200, "", ""}
 
 	topic := r.FormValue("topic")
 	deviceToken := r.FormValue("token")
@@ -88,10 +91,12 @@ func push(w http.ResponseWriter, r *http.Request) {
 		httpHeader,
 		[]byte(payload),
 		deviceToken,
+		apns.ServerGold,
 	}
 
-	status, body, _ := push.Notify()
+	status, header, body, _ := push.Notify()
 	appleResult.Code = status
+	appleResult.Header = header
 	appleResult.Body = string(body[:])
 
 	jsonBytes, _ := json.Marshal(appleResult)
