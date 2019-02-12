@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"jwt"
+	"log"
 	"net/http"
-	"time"
+	"os"
 )
 
 var (
@@ -21,6 +21,13 @@ var (
 func main() {
 
 	flag.Parse()
+	logFilePtr, logErr := os.OpenFile(*logFile, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
+	if nil != logErr {
+		fmt.Println("Failed to open ", *logFile, " for log")
+	}
+	log.SetOutput(logFilePtr)
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+	log.Println("--------------------OwnProvider Log--------------------")
 
 	if *port == "" {
 		fmt.Println("Please specify the service port")
@@ -30,10 +37,11 @@ func main() {
 		return
 	}
 
-	fmt.Println("Own Provider Server Start...")
+	log.Println("OwnProvider Server Start...")
 
 	// API Service
 	http.HandleFunc("/api/notify", push)
+	http.HandleFunc("/api/v2/notify", ownprovider)
 	http.ListenAndServe(":9696", nil)
 }
 
@@ -50,25 +58,10 @@ func push(w http.ResponseWriter, r *http.Request) {
 	deviceToken := r.FormValue("token")
 	payload := r.FormValue("payload")
 
-	if "" == topic {
+	if "" == topic || "" == deviceToken || "" == payload {
+		log.Println("Missing params topic, token or payload which are required")
 		appleResult.Code = 406
-		appleResult.Body = "Please specify a topic"
-		jsonBytes, _ := json.Marshal(appleResult)
-		w.Write([]byte(jsonBytes))
-		return
-	}
-
-	if "" == deviceToken {
-		appleResult.Code = 406
-		appleResult.Body = "Please specify a token"
-		jsonBytes, _ := json.Marshal(appleResult)
-		w.Write([]byte(jsonBytes))
-		return
-	}
-
-	if "" == payload {
-		appleResult.Code = 406
-		appleResult.Body = "Please specify a payload"
+		appleResult.Body = "Topic, Device Token and Payload are required"
 		jsonBytes, _ := json.Marshal(appleResult)
 		w.Write([]byte(jsonBytes))
 		return
@@ -76,6 +69,7 @@ func push(w http.ResponseWriter, r *http.Request) {
 
 	jwtToken, err := jwt.Token(*tomlConf)
 	if nil != err {
+		log.Println(fmt.Sprintf("Create Jwt Token failure: %s", err))
 		appleResult.Code = 406
 		appleResult.Body = "Create Jwt Token Failure"
 	}
@@ -83,8 +77,9 @@ func push(w http.ResponseWriter, r *http.Request) {
 	h := apns.ApnsHeader{"POST", "/3/device/" + deviceToken, "bearer " + jwtToken, topic}
 	httpHeader, err := h.Build4HttpRequest()
 	if nil != err {
+		log.Println(fmt.Sprintf("Create HTTP Request Header failure: %s", err))
 		appleResult.Code = 406
-		appleResult.Body = "Create Request HTTP Header Failure"
+		appleResult.Body = "Create HTTP Request Header Failure"
 	}
 
 	var push = api.ApplePush{
@@ -98,6 +93,19 @@ func push(w http.ResponseWriter, r *http.Request) {
 	appleResult.Code = status
 	appleResult.Header = header
 	appleResult.Body = string(body[:])
+
+	jsonBytes, _ := json.Marshal(appleResult)
+	w.Write([]byte(jsonBytes))
+}
+
+func ownprovider(w http.ResponseWriter, r *http.Request) {
+
+	type AppleResult struct {
+		Code   int
+		Header string
+		Body   string
+	}
+	var appleResult = AppleResult{200, "", ""}
 
 	jsonBytes, _ := json.Marshal(appleResult)
 	w.Write([]byte(jsonBytes))
