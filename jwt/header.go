@@ -6,12 +6,12 @@ import (
 	"strings"
 )
 
-type JwtHeader struct {
+type Header struct {
 	Alg string `json:"alg"`
 	Kid string `json:"kid"`
 }
 
-func (h JwtHeader) Base64Content() (string, error) {
+func (h *Header) Base64Content() (string, error) {
 
 	headerByte, err := json.Marshal(h)
 

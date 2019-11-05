@@ -6,12 +6,12 @@ import (
 	"strings"
 )
 
-type JwtPlayload struct {
+type Payload struct {
 	Iss string `json:"iss"`
 	Iat int64  `json:"iat"`
 }
 
-func (p JwtPlayload) Base64Content() (string, error) {
+func (p *Payload) Base64Content() (string, error) {
 
 	payloadByte, err := json.Marshal(p)
 
