@@ -15,11 +15,11 @@ import (
 func main() {
 	fmt.Println("OwnProvider starting...")
 
-	olog, err := os.OpenFile("/tmp/log_ownprovider.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
+	logger, err := os.OpenFile("/tmp/log_ownprovider_inner.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
 	if nil != err {
 		fmt.Println("Can not open log file")
 	}
-	log.SetOutput(olog)
+	log.SetOutput(logger)
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	log.Println("------------------------------------------")
 
@@ -46,7 +46,7 @@ func Push(w http.ResponseWriter, r *http.Request) {
 	}
 	jwtPayload := jwt.Payload{
 		Iss: iss,
-		Iat: time.Now().Unix(),
+		Iat: time.Now().Unix() + 600,
 	}
 
 	jwToken, err := jwt.Token(jwtHeader, jwtPayload)
@@ -67,6 +67,8 @@ func Push(w http.ResponseWriter, r *http.Request) {
 	}
 	httpHeader, err := h.Build()
 
+	log.Printf("HTTP HEADER : %v", httpHeader)
+
 	server := apple.Gold
 	if "dev" == env {
 		server = apple.Dev
@@ -75,7 +77,7 @@ func Push(w http.ResponseWriter, r *http.Request) {
 	resp, err := t.Notify()
 
 	if nil != err {
-		fmt.Println("Remote Notification Push Failure")
+		log.Printf("Remote Notification Push Failure: %v", err)
 	}
 
 	respHttpBody, err := ioutil.ReadAll(resp.Body)
