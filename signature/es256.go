@@ -17,13 +17,16 @@ type EcdsaSignature struct {
 	R, S *big.Int
 }
 
-func Sign(header string, playload string) (string, error) {
+func Sign(header string, playload string, keyfile string) (string, error) {
 	// Sign with SHA256 hash algorithms
 	h := sha256.New()
 	h.Write([]byte(header + "." + playload))
 	hash := h.Sum(nil)
 	// Read private key content from file
 	p8 := os.Getenv("OWNPROVIDERP8")
+	if "" != keyfile {
+		p8 = keyfile
+	}
 	data, err := ioutil.ReadFile(p8)
 	if nil != err {
 		return "", err
