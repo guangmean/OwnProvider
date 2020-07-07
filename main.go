@@ -3,7 +3,9 @@ package main
 import (
 	"OwnProvider/apple"
 	"OwnProvider/jwt"
+	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -53,45 +55,67 @@ func Push(w http.ResponseWriter, r *http.Request) {
 
 	jwToken, err := jwt.Token(jwtHeader, jwtPayload, "")
 	if nil != err {
-		fmt.Println("Build JWT token failure")
+		log.Println("Build JWT token failure before push")
+		w.Write([]byte("Error before push."))
+		return
+	}
+
+	kind := "UNKNOWN"
+	apnsId := uuid.New().String()
+	var result map[string]interface{}
+	json.Unmarshal([]byte(payload), &result)
+	aps, ok := result["aps"].(map[string]interface{})
+	if ok {
+		if nil != aps["type"] {
+			tp := aps["type"].(float64)
+			if 2 == tp {
+				kind = "CHAT"
+			} else if 3 == tp {
+				kind = "ADMIRER"
+			} else if 4 == tp {
+				kind = "GIFTSENT"
+			}
+		}
+
+		if nil != aps["apnsid"] {
+			id := aps["apnsid"].(string)
+			if 36 == len(id) {
+				apnsId = id
+			}
+		}
 	}
 
 	h := apple.Header{
-		Method:        "POST",
-		Path:          "/3/device/" + deviceToken,
-		Authorization: "bearer " + jwToken,
-		ApnsPushType:  "alert", // alert | background | voip | complication | fileprovider | mdm
-		//ApnsId:         "",
+		Method:         "POST",
+		Path:           "/3/device/" + deviceToken,
+		Authorization:  "bearer " + jwToken,
+		ApnsPushType:   "alert", // alert | background | voip | complication | fileprovider | mdm
+		ApnsId:         apnsId,
 		ApnsExpiration: "0",
 		ApnsPriority:   "10",
-		ApnsTopic:      "***",
+		ApnsTopic:      "com.angularcorp.iCupid",
 		//ApnsCollapseId: "",
 	}
 	httpHeader, err := h.Build()
 
-	log.Printf("HTTP HEADER : %v", httpHeader)
+	//log.Printf("HTTP HEADER : %v", httpHeader)
 
 	server := apple.Gold
 	t := apple.Target{server, httpHeader, []byte(payload), deviceToken}
 	resp, err := t.Notify()
 
 	if nil != err {
-		log.Printf("Remote Notification Push Failure: %v", err)
+		log.Printf("Network erro: %v", err)
 	}
 
 	respHttpBody, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 
-	status := resp.Proto + " " + resp.Status
-	header := ""
-	for k, v := range resp.Header {
-		header += k + ": " + strings.Join(v, " ")
+	if 200 == resp.StatusCode {
+		log.Println(deviceToken + "|" + kind + "|" + strings.Join(resp.Header["Apns-Id"], " "))
+	} else {
+		log.Println(deviceToken + "|" + kind + "|" + resp.Status + ":" + string(respHttpBody[:]))
 	}
-	body := string(respHttpBody[:])
-
-	log.Println("inner ---> " + status)
-	log.Println("inner ---> " + header)
-	log.Println("inner ---> " + body)
 
 	w.Write([]byte("Push Success"))
 }
