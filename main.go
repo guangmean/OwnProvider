@@ -41,6 +41,7 @@ func main() {
 }
 
 func Push(w http.ResponseWriter, r *http.Request) {
+	env := r.FormValue("env")
 	deviceToken := r.FormValue("token")
 	payload := r.FormValue("payload")
 
@@ -101,6 +102,9 @@ func Push(w http.ResponseWriter, r *http.Request) {
 	//log.Printf("HTTP HEADER : %v", httpHeader)
 
 	server := apple.Gold
+	if "sandbox" == env {
+		server = apple.Dev
+	}
 	t := apple.Target{server, httpHeader, []byte(payload), deviceToken}
 	resp, err := t.Notify()
 
