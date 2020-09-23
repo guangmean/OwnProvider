@@ -42,8 +42,16 @@ func main() {
 
 func Push(w http.ResponseWriter, r *http.Request) {
 	env := r.FormValue("env")
+	pushType := r.FormValue("voip")
 	deviceToken := r.FormValue("token")
 	payload := r.FormValue("payload")
+
+	apnsTopic := "com.angularcorp.iCupid"
+	if "voip" != pushType {
+		pushType = "alert"
+	} else {
+		apnsTopic = "com.angularcorp.iCupid.voip"
+	}
 
 	jwtHeader := jwt.Header{
 		Alg: "ES256",
@@ -90,11 +98,11 @@ func Push(w http.ResponseWriter, r *http.Request) {
 		Method:         "POST",
 		Path:           "/3/device/" + deviceToken,
 		Authorization:  "bearer " + jwToken,
-		ApnsPushType:   "alert", // alert | background | voip | complication | fileprovider | mdm
+		ApnsPushType:   pushType, // alert | background | voip | complication | fileprovider | mdm
 		ApnsId:         apnsId,
 		ApnsExpiration: "0",
 		ApnsPriority:   "10",
-		ApnsTopic:      "com.angularcorp.iCupid",
+		ApnsTopic:      apnsTopic,
 		//ApnsCollapseId: "",
 	}
 	httpHeader, err := h.Build()
