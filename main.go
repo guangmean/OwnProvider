@@ -44,12 +44,12 @@ func Push(w http.ResponseWriter, r *http.Request) {
 	pushType := r.FormValue("voip")
 	deviceToken := r.FormValue("token")
 	payload := r.FormValue("payload")
+	apnsTopic := r.FormValue("topic")
 
-	apnsTopic := "com.example.www"
 	if "voip" != pushType {
 		pushType = "alert"
 	} else {
-		apnsTopic = "com.example.www.voip"
+		apnsTopic = apnsTopic + ".voip"
 	}
 
 	jwtHeader := jwt.Header{
