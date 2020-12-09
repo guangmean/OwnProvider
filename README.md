@@ -13,13 +13,13 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-s -w" -trimpath -o own
 /where/your/privider/install/ownprovider
 ```
 
-# Push a Alert Message
+# Push Alert Message
 ```shell
 curl -X POST "http://127.0.0.1:27953/ownprovider/inner/push" -d 'payload={"aps":{"alert":{"title":"Hello","body":"Baby"},"badge":1,"sound"     :"default","type":"6"}}' -d 'topic=com.example.app&env=sandbox&token=YourDeviceToken'
 
 ```
 
-#Push a VoIP Message - Note: VoIP device token is different with alert device token
+# Push VoIP Message - Note: VoIP device token is different with alert device token
 ```
 curl -X POST "http://127.0.0.1:27953/ownprovider/inner/push" -d 'payload={"aps":{"alert":{"title":"Hello","body":"Baby"},"badge":1,"sound"     :"default","type":"6"}}' -d 'topic=com.example.app&voip=voip&env=sandbox&token=YourVoIPDeviceToken'
 ```
