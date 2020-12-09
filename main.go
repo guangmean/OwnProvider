@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -46,19 +45,19 @@ func Push(w http.ResponseWriter, r *http.Request) {
 	deviceToken := r.FormValue("token")
 	payload := r.FormValue("payload")
 
-	apnsTopic := "com.angularcorp.iCupid"
+	apnsTopic := "com.example.www"
 	if "voip" != pushType {
 		pushType = "alert"
 	} else {
-		apnsTopic = "com.angularcorp.iCupid.voip"
+		apnsTopic = "com.example.www.voip"
 	}
 
 	jwtHeader := jwt.Header{
 		Alg: "ES256",
-		Kid: "***",
+		Kid: "***", // Your Kid
 	}
 	jwtPayload := jwt.Payload{
-		Iss: "***",
+		Iss: "***", // Your Iss - Team Id
 		Iat: time.Now().Unix(),
 	}
 
@@ -83,6 +82,8 @@ func Push(w http.ResponseWriter, r *http.Request) {
 				kind = "ADMIRER"
 			} else if 4 == tp {
 				kind = "GIFTSENT"
+			} else if 403 == tp {
+				kind = "DECLINE"
 			}
 		}
 
@@ -123,11 +124,7 @@ func Push(w http.ResponseWriter, r *http.Request) {
 	respHttpBody, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 
-	if 200 == resp.StatusCode {
-		log.Println(deviceToken + "|" + kind + "|" + strings.Join(resp.Header["Apns-Id"], " "))
-	} else {
-		log.Println(deviceToken + "|" + kind + "|" + resp.Status + ":" + string(respHttpBody[:]))
-	}
+	log.Println(string(deviceToken[len(deviceToken)-10:]) + "|" + kind + "|" + resp.Status + ":" + string(respHttpBody[:]))
 
 	w.Write([]byte("Push Success"))
 }
