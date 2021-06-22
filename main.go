@@ -3,18 +3,17 @@ package main
 import (
 	"OwnProvider/apple"
 	"OwnProvider/jwt"
+	"OwnProvider/loger"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"time"
 )
 
 func main() {
-	fmt.Println("OwnProvider inner only starting...")
 
 	p8 := os.Getenv("OWNPROVIDERP8")
 	if p8 == "" {
@@ -22,21 +21,13 @@ func main() {
 		return
 	}
 
-	logger, err := os.OpenFile("/tmp/log_ownprovider_inner.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
-	if nil != err {
-		fmt.Println("Can not open log file")
-	}
-	log.SetOutput(logger)
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-	log.Println("------------------------------------------")
-
 	// Home Page
 	http.HandleFunc("/ownprovider/inner/push", Push)
 
 	// Server
 	http.ListenAndServe(":27953", nil)
 
-	fmt.Println("OwnProvider inner only server ready!!!")
+	loger.WriteLog(loger.LOG_LEVEL_INFO, "OwnProvider service is launching...")
 }
 
 func Push(w http.ResponseWriter, r *http.Request) {
@@ -44,12 +35,18 @@ func Push(w http.ResponseWriter, r *http.Request) {
 	pushType := r.FormValue("voip")
 	deviceToken := r.FormValue("token")
 	payload := r.FormValue("payload")
-	apnsTopic := r.FormValue("topic")
+	topic := r.FormValue("topic")
+
+	apnsTopic := "com.example.app"
+
+	if len(topic) > 10 {
+		apnsTopic = topic
+	}
 
 	if "voip" != pushType {
 		pushType = "alert"
 	} else {
-		apnsTopic = apnsTopic + ".voip"
+		apnsTopic += ".voip"
 	}
 
 	jwtHeader := jwt.Header{
@@ -63,30 +60,16 @@ func Push(w http.ResponseWriter, r *http.Request) {
 
 	jwToken, err := jwt.Token(jwtHeader, jwtPayload, "")
 	if nil != err {
-		log.Println("Build JWT token failure before push")
+		loger.WriteLog(loger.LOG_LEVEL_ERROR, err)
 		w.Write([]byte("Error before push."))
 		return
 	}
 
-	kind := "UNKNOWN"
 	apnsId := uuid.New().String()
 	var result map[string]interface{}
 	json.Unmarshal([]byte(payload), &result)
 	aps, ok := result["aps"].(map[string]interface{})
 	if ok {
-		if nil != aps["type"] {
-			tp := aps["type"].(float64)
-			if 2 == tp {
-				kind = "CHAT"
-			} else if 3 == tp {
-				kind = "ADMIRER"
-			} else if 4 == tp {
-				kind = "GIFTSENT"
-			} else if 403 == tp {
-				kind = "DECLINE"
-			}
-		}
-
 		if nil != aps["apnsid"] {
 			id := aps["apnsid"].(string)
 			if 36 == len(id) {
@@ -118,13 +101,26 @@ func Push(w http.ResponseWriter, r *http.Request) {
 	resp, err := t.Notify()
 
 	if nil != err {
-		log.Printf("Network erro: %v", err)
+		loger.WriteLog(loger.LOG_LEVEL_ERROR, err)
+		w.Write([]byte("Push Failured"))
+		return
 	}
 
+	appleReplyApnsId := resp.Header.Get("Apns-Id")
+
 	respHttpBody, err := ioutil.ReadAll(resp.Body)
+	if nil != err {
+		loger.WriteLog(loger.LOG_LEVEL_ERROR, err)
+		w.Write([]byte("Push Requested"))
+		return
+	}
 	resp.Body.Close()
 
-	log.Println(string(deviceToken[len(deviceToken)-10:]) + "|" + kind + "|" + resp.Status + ":" + string(respHttpBody[:]))
-
-	w.Write([]byte("Push Success"))
+	if "" == string(respHttpBody[:]) {
+		loger.WriteLog(loger.LOG_LEVEL_INFO, deviceToken+", "+apnsId+"【"+appleReplyApnsId+"】"+" push success")
+		w.Write([]byte("Push Success - " + apnsId + "【" + appleReplyApnsId + "】"))
+	} else {
+		loger.WriteLog(loger.LOG_LEVEL_INFO, deviceToken+", "+apnsId+"【"+appleReplyApnsId+"】"+" error, "+string(respHttpBody[:]))
+		w.Write([]byte("Push Error - " + apnsId + "【" + appleReplyApnsId + "】"))
+	}
 }
