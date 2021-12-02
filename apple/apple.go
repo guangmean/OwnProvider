@@ -5,6 +5,7 @@ import (
 	"golang.org/x/net/http2"
 	"net/http"
 	"reflect"
+	"time"
 )
 
 const (
@@ -54,13 +55,17 @@ func (t *Target) Notify() (*http.Response, error) {
 	r.Header = t.HttpHeader
 
 	client := &http.Client{
+		Timeout:   time.Second * 3,
 		Transport: &http2.Transport{},
 	}
 
 	result, err := client.Do(r)
+
 	if nil != err {
 		return nil, err
 	}
+
+	defer result.Body.Close()
 
 	return result, nil
 }
