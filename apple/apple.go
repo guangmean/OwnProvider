@@ -53,6 +53,7 @@ func (t *Target) Notify() (*http.Response, error) {
 	}
 
 	r.Header = t.HttpHeader
+	r.Header.Add("Connection", "close")
 
 	client := &http.Client{
 		Timeout:   time.Second * 3,
@@ -64,7 +65,6 @@ func (t *Target) Notify() (*http.Response, error) {
 	if nil != err {
 		return nil, err
 	}
-
 	defer result.Body.Close()
 
 	return result, nil
