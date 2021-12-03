@@ -3,11 +3,11 @@ package main
 import (
 	"OwnProvider/apple"
 	"OwnProvider/jwt"
+	"OwnProvider/loger"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -25,14 +25,6 @@ func main() {
 		fmt.Println("Error: ENV - OWNPROVIDERP8 is empty")
 		return
 	}
-
-	logger, err := os.OpenFile("/tmp/log_ownprovider_inner.log", os.O_CREATE|os.O_RDWR|os.O_APPEND, 0666)
-	if nil != err {
-		fmt.Println("Can not open log file")
-	}
-	log.SetOutput(logger)
-	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-	log.Println("------------------------------------------")
 
 	// Home Page
 	http.HandleFunc("/ownprovider/inner/push", Push)
@@ -70,7 +62,7 @@ func Push(w http.ResponseWriter, r *http.Request) {
 
 	jwToken, err := jwt.Token(jwtHeader, jwtPayload, "")
 	if nil != err {
-		log.Println("Build JWT token failure before push")
+		loger.WriteLog(loger.LOG_LEVEL_ERROR, err)
 		w.Write([]byte("Error before push."))
 		return
 	}
@@ -127,13 +119,13 @@ func Push(w http.ResponseWriter, r *http.Request) {
 	resp, err := t.Notify()
 
 	if nil != err {
-		log.Printf("Network erro: %v", err)
+		loger.WriteLog(loger.LOG_LEVEL_ERROR, err)
 	}
 	resp.Body.Close()
 
 	respHttpBody, err := ioutil.ReadAll(resp.Body)
 
-	log.Println("推送环境【" + server + "】|" + kind + "|" + resp.Status + ":" + string(respHttpBody[:]) + "|" + deviceToken)
+	loger.WriteLog(loger.LOG_LEVEL_INFO, "推送环境【"+server+"】|"+kind+"|"+resp.Status+":"+string(respHttpBody[:])+"|"+deviceToken)
 
 	w.Write([]byte("Push Success"))
 }

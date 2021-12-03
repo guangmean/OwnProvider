@@ -15,7 +15,7 @@ const (
 )
 
 func WriteLog(logLevel string, logStr interface{}) {
-	logName := time.Now().Format("2006-01-02") + "_ownprovider.log"
+	logName := time.Now().Format("2006-01-02") + "_ownprovider_inner.log"
 	doLog(logLevel, logName, logStr)
 }
 
