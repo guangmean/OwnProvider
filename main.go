@@ -6,11 +6,12 @@ import (
 	"OwnProvider/loger"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func init() {
@@ -42,7 +43,7 @@ func Push(w http.ResponseWriter, r *http.Request) {
 	payload := r.FormValue("payload")
 	apnsTopic := r.FormValue("topic")
 	if len(apnsTopic) < 10 {
-		apnsTopic = "com.angularcorp.iCupid"
+		apnsTopic = "com.example.app"
 	}
 
 	if "voip" != pushType {
@@ -53,10 +54,10 @@ func Push(w http.ResponseWriter, r *http.Request) {
 
 	jwtHeader := jwt.Header{
 		Alg: "ES256",
-		Kid: "P5BN65T68Y", // Your Kid
+		Kid: "***", // Your Kid
 	}
 	jwtPayload := jwt.Payload{
-		Iss: "T5RB2UCSAR", // Your Iss - Team Id
+		Iss: "***", // Your Iss - Team Id
 		Iat: time.Now().Unix(),
 	}
 
