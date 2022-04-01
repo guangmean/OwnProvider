@@ -42,8 +42,20 @@ func Push(w http.ResponseWriter, r *http.Request) {
 	deviceToken := r.FormValue("token")
 	payload := r.FormValue("payload")
 	apnsTopic := r.FormValue("topic")
-	if len(apnsTopic) < 10 {
+
+	teamid := "***"
+	kid := "***"
+	kfile := ""
+	switch apnsTopic {
+	case "com.topic.yours":
+		teamid = "***"
+		kid = "***"
+		kfile = "***"
+	default:
 		apnsTopic = "com.example.app"
+		teamid = "***"
+		kid = "***"
+		kfile = "***"
 	}
 
 	if "voip" != pushType {
@@ -54,14 +66,14 @@ func Push(w http.ResponseWriter, r *http.Request) {
 
 	jwtHeader := jwt.Header{
 		Alg: "ES256",
-		Kid: "***", // Your Kid
+		Kid: kid, // Your Kid
 	}
 	jwtPayload := jwt.Payload{
-		Iss: "***", // Your Iss - Team Id
+		Iss: teamid, // Your Iss - Team Id
 		Iat: time.Now().Unix(),
 	}
 
-	jwToken, err := jwt.Token(jwtHeader, jwtPayload, "")
+	jwToken, err := jwt.Token(jwtHeader, jwtPayload, kfile)
 	if nil != err {
 		loger.WriteLog(loger.LOG_LEVEL_ERROR, err)
 		w.Write([]byte("Error before push."))
