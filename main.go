@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -98,6 +99,8 @@ func Push(w http.ResponseWriter, r *http.Request) {
 				kind = "DECLINE"
 			} else if 21 == tp {
 				kind = "METION"
+			} else {
+				kind = strconv.Itoa(int(tp))
 			}
 		}
 
@@ -127,8 +130,15 @@ func Push(w http.ResponseWriter, r *http.Request) {
 	server := apple.Gold
 	if "sandbox" == env || "develop" == env {
 		server = apple.Dev
+	} else {
+		env = "gold"
 	}
-	t := apple.Target{server, httpHeader, []byte(payload), deviceToken}
+	t := apple.Target{
+		Env:         server,
+		HttpHeader:  httpHeader,
+		HttpPayload: []byte(payload),
+		Token:       deviceToken,
+	}
 	resp, err := t.Notify()
 
 	if nil != err {
@@ -137,8 +147,11 @@ func Push(w http.ResponseWriter, r *http.Request) {
 	resp.Body.Close()
 
 	respHttpBody, err := ioutil.ReadAll(resp.Body)
-
-	loger.WriteLog(loger.LOG_LEVEL_INFO, "推送环境【"+server+"】|"+kind+"|"+resp.Status+":"+string(respHttpBody[:])+"|"+deviceToken)
+	respHttpBodyStr := string(respHttpBody[:])
+	if 0 == len(respHttpBodyStr) {
+		respHttpBodyStr = "NOBODY"
+	}
+	loger.WriteLog(loger.LOG_LEVEL_INFO, "推送【"+env+"->"+pushType+"】|"+kind+"|"+resp.Status+"|"+respHttpBodyStr+"|"+deviceToken)
 
 	w.Write([]byte("Push Success"))
 }

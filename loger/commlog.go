@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"runtime"
 	"time"
 )
 
@@ -48,12 +47,16 @@ func doLog(logLevel string, logName string, logStr interface{}) {
 	} else {
 		defer f.Close()
 	}
-	logger := log.New(f, "DEBUG", log.LstdFlags)
-	funcName, _, line, ok := runtime.Caller(1)
-	if ok {
-		logger.SetPrefix(runtime.FuncForPC(funcName).Name() + "|")
-		logger.Printf("|%s|line:%d|%v", logLevel, line, logStr)
-	} else {
-		logger.Printf("|%s|%v", logLevel, logStr)
-	}
+	logger := log.New(f, "", log.LstdFlags)
+	logger.Printf("|%s|%v", logLevel, logStr)
+
+	/*
+		funcName, _, line, ok := runtime.Caller(1)
+		if ok {
+			logger.SetPrefix(runtime.FuncForPC(funcName).Name() + "|")
+			logger.Printf("|%s|line:%d|%v", logLevel, line, logStr)
+		} else {
+			logger.Printf("|%s|%v", logLevel, logStr)
+		}
+	*/
 }
